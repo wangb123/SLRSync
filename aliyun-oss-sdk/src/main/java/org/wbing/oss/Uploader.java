@@ -31,4 +31,32 @@ public interface Uploader {
      */
     boolean deleteTask(String taskId);
 
+    /**
+     * 获取第一个正在等待的任务
+     */
+    UploadTask pullWaitingTask();
+
+    /**
+     * 获取第一个正在等待的任务
+     */
+    UploadTask pullTaskById(String taskId);
+
+    /**
+     * 添加上传监听
+     *
+     * @param taskListener
+     */
+    void addUploadTaskListener(UploadTaskListener taskListener);
+
+    /**
+     * 移除上传任务监听
+     *
+     * @return
+     */
+    void removeUploadTaskListener(UploadTaskListener taskListener);
+
+    /**
+     * 获取上传任务的总监听
+     */
+    UploadTaskListener getUploadTaskListener();
 }

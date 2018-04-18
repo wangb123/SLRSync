@@ -9,5 +9,5 @@ import java.io.File;
 public interface UploadRes {
     File getFile();
 
-    Byte[] getByte();
+    byte[] getByte();
 }

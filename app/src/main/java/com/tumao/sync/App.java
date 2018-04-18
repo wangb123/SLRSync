@@ -2,7 +2,8 @@ package com.tumao.sync;
 
 import android.app.Application;
 
-import org.wbing.oss.UploaderEngine;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.File;
 
@@ -17,19 +18,36 @@ public class App extends Application {
         return app;
     }
 
+    private Gson gson;
+
     @Override
     public void onCreate() {
         super.onCreate();
         app = this;
-        UploaderEngine.init(this);
     }
 
     public File getExternalSLRThumbDir() {
-//        File SLRThumb = new File(Environment.getExternalStorageDirectory(), "SLRThumb");
-        File SLRThumb = new File(getExternalCacheDir(), "SLRThumb");
+        File SLRThumb = getExternalFilesDir("SLRThumb");
         if (!SLRThumb.exists()) {
             SLRThumb.mkdirs();
         }
         return SLRThumb;
+    }
+
+    public File getExternalSLRThumbCompressDir() {
+        File compress = new File(getExternalSLRThumbDir(), "Compress");
+        if (!compress.exists()) {
+            compress.mkdirs();
+        }
+        return compress;
+    }
+
+    public Gson getGson() {
+        if (gson == null) {
+            gson = new GsonBuilder()
+                    .enableComplexMapKeySerialization() //支持Map的key为复杂对象的形式
+                    .create();
+        }
+        return gson;
     }
 }

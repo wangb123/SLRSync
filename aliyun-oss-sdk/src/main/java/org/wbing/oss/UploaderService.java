@@ -5,10 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
-import android.util.Log;
 
-public class UploaderService extends Service implements Uploader {
+public class UploaderService extends Service {
     public static void start(Context context) {
         Intent starter = new Intent(context, UploaderService.class);
         context.startService(starter);
@@ -19,8 +19,7 @@ public class UploaderService extends Service implements Uploader {
         context.bindService(starter, conn, Context.BIND_AUTO_CREATE);
     }
 
-
-    private static final String TAG = "UploaderService";
+    private Handler handler;
 
     public UploaderService() {
     }
@@ -33,32 +32,29 @@ public class UploaderService extends Service implements Uploader {
     @Override
     public void onCreate() {
         super.onCreate();
+        handler = new Handler();
+        handler();
+    }
+
+    private void handler() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                handler();
+            }
+        }, 1000);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        handler.removeCallbacksAndMessages(null);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         return START_STICKY;
-    }
-
-
-    @Override
-    public String addTask(UploadTask task) {
-        return task.getRes().getFile().getAbsolutePath();
-    }
-
-    @Override
-    public boolean pauseTask(String taskId) {
-        return false;
-    }
-
-    @Override
-    public boolean deleteTask(String taskId) {
-        return false;
     }
 
     public static final class ServiceBinder extends Binder {

@@ -7,32 +7,43 @@ package org.wbing.oss;
  * @author 王冰
  * @date 2018/4/9
  */
+
 public class UploadTask<Res extends UploadRes> {
+
+
     /**
-     * 上传状态：等待中
+     * 上传状态：上传失败
      */
-    public static final int STATUS_WAIT = 0;
-    /**
-     * 上传状态：正在上传
-     */
-    public static final int STATUS_GOING = 1;
-    /**
-     * 上传状态：上传成功
-     */
-    public static final int STATUS_COMPLETE = 2;
-    /**
-     * 上传状态：暂停上传
-     */
-    public static final int STATUS_PAUSE = -1;
+    public static final int STATUS_FAIL = -3;
     /**
      * 上传状态：取消上传
      */
     public static final int STATUS_CANCLE = -2;
     /**
-     * 上传状态：上传失败
+     * 上传状态：暂停上传
      */
-    public static final int STATUS_FAIL = -3;
+    public static final int STATUS_PAUSE = -1;
+    /**
+     * 上传状态：任务创建，未添加到上传队列中
+     */
+    public static final int STATUS_CREATE = 0;
+    /**
+     * 上传状态：等待中
+     */
+    public static final int STATUS_WAIT = 1;
+    /**
+     * 上传状态：正在上传
+     */
+    public static final int STATUS_GOING = 2;
+    /**
+     * 上传状态：上传成功
+     */
+    public static final int STATUS_COMPLETE = 3;
 
+    /**
+     * 任务id
+     */
+    private String id;
     /**
      * 要上传的数据
      */
@@ -41,6 +52,33 @@ public class UploadTask<Res extends UploadRes> {
      * 任务状态
      */
     private int status;
+
+    /**
+     * 存放位置
+     */
+    private String url;
+    /**
+     * 上传长度
+     */
+    private long length;
+    /**
+     * 上传文件的总长度
+     */
+    private long total;
+    /**
+     * 一些额外的信息
+     */
+    private String extra;
+
+    private UploadTaskListener<Res> taskListener;
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getId() {
+        return id;
+    }
 
     public UploadTask(Res res) {
         this.res = res;
@@ -52,5 +90,86 @@ public class UploadTask<Res extends UploadRes> {
 
     public Res getRes() {
         return res;
+    }
+
+    public long getLength() {
+        return length;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getExtra() {
+        return extra;
+    }
+
+    public void setExtra(String extra) {
+        this.extra = extra;
+    }
+
+    public UploadTaskListener<Res> getTaskListener() {
+        return taskListener;
+    }
+
+    public void setTaskListener(UploadTaskListener<Res> taskListener) {
+        this.taskListener = taskListener;
+    }
+
+    public void onCreate() {
+        this.status = STATUS_CREATE;
+        if (this.taskListener != null) {
+            taskListener.onCreate(this);
+        }
+    }
+
+    public void onStart() {
+        this.status = STATUS_WAIT;
+        if (this.taskListener != null) {
+            taskListener.onStart(this);
+        }
+    }
+
+    public void onProgress(int length, int total) {
+        this.length = length;
+        this.total = total;
+        this.status = length == total ? STATUS_GOING : STATUS_COMPLETE;
+        if (this.taskListener != null) {
+            taskListener.onProgress(this, length, total);
+        }
+    }
+
+    public void onError(Throwable throwable) {
+        this.status = STATUS_FAIL;
+        if (this.taskListener != null) {
+            taskListener.onError(this, throwable);
+        }
+    }
+
+    public void onPause() {
+        this.status = STATUS_PAUSE;
+        if (this.taskListener != null) {
+            taskListener.onPause(this);
+        }
+    }
+
+    public void onCancle() {
+        this.status = STATUS_CANCLE;
+        if (this.taskListener != null) {
+            taskListener.onCancle(this);
+        }
+    }
+
+
+    @Override
+    public String toString() {
+        return "UploadTask{" +
+                "id='" + id + '\'' +
+                ", res=" + res.toString() +
+                ", status=" + status +
+                ", url='" + url + '\'' +
+                ", length=" + length +
+                ", extra='" + extra + '\'' +
+                '}';
     }
 }
