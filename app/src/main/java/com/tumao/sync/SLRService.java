@@ -11,23 +11,22 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.media.ExifInterface;
 import android.os.Binder;
-import android.os.FileObserver;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.tumao.sync.bean.SLRExifInfo;
+import com.tumao.sync.ui.UploadTaskAdapter;
 
 import org.wbing.oss.UploadTask;
 import org.wbing.oss.UploadTaskListener;
 import org.wbing.oss.UploaderEngine;
-import org.wbing.oss.compress.Luban;
-import org.wbing.oss.compress.OnCompressListener;
 import org.wbing.oss.impl.FileUploadTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -43,7 +42,7 @@ public class SLRService extends Service {
 
     public static void start(Context context) {
         Intent starter = new Intent(context, SLRService.class);
-        context.startService(starter);
+        context.getApplicationContext().startService(starter);
     }
 
     public static void bind(Context context, ServiceConnection conn) {
@@ -51,15 +50,17 @@ public class SLRService extends Service {
         context.bindService(starter, conn, Context.BIND_AUTO_CREATE);
     }
 
-
     private SLRDevice[] slrDevices;
-    private int currentDevice = -1;
-    private List<UploadTask<FileUploadTask.FileUploadRes>> taskList = new ArrayList<>();
+    private int currentDevice;
+
+    private Handler handler = new Handler(Looper.getMainLooper());
+
+
+    private UploadTaskAdapter uploadTaskAdapter = new UploadTaskAdapter();
 
     private UploadTaskListener<FileUploadTask.FileUploadRes> taskListener = new UploadTaskListener<FileUploadTask.FileUploadRes>() {
         @Override
         public void onCreate(UploadTask<FileUploadTask.FileUploadRes> task) {
-            taskList.add(task);
             File file = task.getRes().getFile();
             try {
                 SLRExifInfo info = SLRExifInfo.createByExif(new ExifInterface(file.getAbsolutePath()));
@@ -71,26 +72,83 @@ public class SLRService extends Service {
 
         @Override
         public void onStart(UploadTask<FileUploadTask.FileUploadRes> task) {
+            if (uploadTaskAdapter.getItemCount() == 0) {
+                return;
+            }
+            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            if (index >= 0) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        uploadTaskAdapter.notifyItemChanged(index, "status");
+                    }
+                });
+            }
         }
 
         @Override
         public void onProgress(UploadTask<FileUploadTask.FileUploadRes> task, int length, int total) {
-
+            if (uploadTaskAdapter.getItemCount() == 0) {
+                return;
+            }
+            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            if (index >= 0) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        uploadTaskAdapter.notifyItemChanged(index, "progress");
+                    }
+                });
+            }
         }
 
         @Override
         public boolean onError(UploadTask<FileUploadTask.FileUploadRes> task, Throwable throwable) {
+            if (uploadTaskAdapter.getItemCount() == 0) {
+                return false;
+            }
+            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            if (index >= 0) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        uploadTaskAdapter.notifyItemChanged(index, "status");
+                    }
+                });
+            }
             return false;
         }
 
         @Override
         public void onPause(UploadTask<FileUploadTask.FileUploadRes> task) {
-
+            if (uploadTaskAdapter.getItemCount() == 0) {
+                return;
+            }
+            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            if (index >= 0) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        uploadTaskAdapter.notifyItemChanged(index, "status");
+                    }
+                });
+            }
         }
 
         @Override
         public void onCancle(UploadTask<FileUploadTask.FileUploadRes> task) {
-
+            if (uploadTaskAdapter.getItemCount() == 0) {
+                return;
+            }
+            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            if (index >= 0) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        uploadTaskAdapter.notifyItemChanged(index, "status");
+                    }
+                });
+            }
         }
     };
 
@@ -99,7 +157,7 @@ public class SLRService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        return new ServiceBinder(this, intent);
+        return new ServiceBinder(this, intent, uploadTaskAdapter);
     }
 
     @Override
@@ -120,18 +178,16 @@ public class SLRService extends Service {
     }
 
     @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_REDELIVER_INTENT;
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
-
         unregisterReceiver(usbReceiver);
-        if (currentDevice != -1) {
-            slrDevices[currentDevice].close();
-        }
     }
 
-    public List<UploadTask<FileUploadTask.FileUploadRes>> getTaskList() {
-        return taskList;
-    }
 
     /**
      * 设置外部设备（相机）
@@ -148,18 +204,36 @@ public class SLRService extends Service {
         SLRDevice slrDevice = slrDevices[currentDevice];
         if (usbManager.hasPermission(slrDevice.usbDevice)) {
             try {
-                SDCardListener listener = new SDCardListener(slrDevice.getRoot().getAbsolutePath());
-                listener.startWatching();
-                slrDevice.init();
-                taskList.clear();
-                List<File> files = slrDevice.getFiles();
-                for (File file : files) {
-                    FileUploadTask uploadTask = new FileUploadTask(file);
-                    uploadTask.setTaskListener(taskListener);
-                    UploaderEngine.instance().addTask(uploadTask);
-                }
-                listener.stopWatching();
-                slrDevice.close();
+                slrDevice.init(new SLRDevice.OnSLRDeviceFileScanListener() {
+                    @Override
+                    public void onScanStart() {
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                uploadTaskAdapter.setUploadTaskList(null);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFileAdd(File file) {
+                        Log.e(TAG, String.format("path:%s\nlen:%s", file.getAbsolutePath(), file.length()));
+                        final FileUploadTask uploadTask = new FileUploadTask(file);
+                        uploadTask.setTaskListener(taskListener);
+                        UploaderEngine.instance().addTask(uploadTask);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                uploadTaskAdapter.addTask(uploadTask);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onScanEnd(List<File> files) {
+
+                    }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -173,6 +247,7 @@ public class SLRService extends Service {
      * 扫描外部设备（相机）
      */
     public void discoverDevice() {
+
         slrDevices = SLRDevice.getSLRDevices(this);
         if (slrDevices.length == 0) {
             Log.w(TAG, "no device found!");
@@ -220,72 +295,15 @@ public class SLRService extends Service {
         }
     };
 
+    public static class ServiceBinder extends Binder {
+        private SLRService service;
+        private Intent intent;
+        private UploadTaskAdapter uploadTaskAdapter;
 
-    public class SDCardListener extends FileObserver {
-
-        private String root;
-
-        SDCardListener(String path) {
-            super(path, FileObserver.CREATE | FileObserver.CLOSE_WRITE);
-            root = path;
-        }
-
-        @Override
-        public void onEvent(int event, String path) {
-            if (path == null) {
-                return;
-            }
-            File file = new File(root, path);
-            switch (event) {
-                case FileObserver.CREATE:
-                    Log.e("新增文件:", file.getAbsolutePath());
-                    break;
-                case FileObserver.CLOSE_WRITE:
-                    Log.e("文件写入完毕：", file.getAbsolutePath());
-                    try {
-                        SLRExifInfo info = SLRExifInfo.createByExif(new ExifInterface(file.getAbsolutePath()));
-
-                        Luban.with(getBaseContext())
-                                .load(file.getAbsolutePath())
-                                .setTargetDir(App.getApp().getExternalSLRThumbCompressDir().getAbsolutePath())
-                                .ignoreBy(150)
-                                .height(1920)
-                                .width(1080)
-                                .setCompressListener(new OnCompressListener() {
-                                    @Override
-                                    public void onStart() {
-                                        Log.e("compress", "onStart");
-                                    }
-
-                                    @Override
-                                    public void onSuccess(File file) {
-
-                                        Log.e("compress", "onSuccess=" + file.getAbsolutePath());
-                                    }
-
-                                    @Override
-                                    public void onError(Throwable e) {
-                                        e.printStackTrace();
-                                        Log.e("compress", "onError");
-                                    }
-                                }).launch();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
-    public static final class ServiceBinder extends Binder {
-        SLRService service;
-        Intent intent;
-
-        public ServiceBinder(SLRService service, Intent intent) {
+        public ServiceBinder(SLRService service, Intent intent, UploadTaskAdapter uploadTaskAdapter) {
             this.service = service;
             this.intent = intent;
+            this.uploadTaskAdapter = uploadTaskAdapter;
         }
 
         public SLRService getService() {
@@ -296,5 +314,9 @@ public class SLRService extends Service {
             return intent;
         }
 
+        public UploadTaskAdapter getUploadTaskAdapter() {
+            return uploadTaskAdapter;
+        }
     }
+
 }

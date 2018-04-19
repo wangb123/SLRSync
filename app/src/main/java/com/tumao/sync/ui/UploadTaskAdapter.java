@@ -1,6 +1,5 @@
 package com.tumao.sync.ui;
 
-import android.app.Activity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +13,7 @@ import com.tumao.sync.R;
 import org.wbing.oss.UploadTask;
 import org.wbing.oss.impl.FileUploadTask;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,27 +21,26 @@ import java.util.List;
  * @date 2018/4/17
  */
 public class UploadTaskAdapter extends RecyclerView.Adapter<UploadTaskAdapter.Holder> {
-    Activity activity;
-    List<UploadTask<FileUploadTask.FileUploadRes>> uploadTaskList;
+    List<UploadTask> uploadTaskList;
 
-    public UploadTaskAdapter(Activity activity) {
-        this.activity = activity;
+    public UploadTaskAdapter() {
     }
 
-    public void setUploadTaskList(List<UploadTask<FileUploadTask.FileUploadRes>> uploadTaskList) {
+    public void setUploadTaskList(List<UploadTask> uploadTaskList) {
         this.uploadTaskList = uploadTaskList;
         notifyDataSetChanged();
     }
 
-    public List<UploadTask<FileUploadTask.FileUploadRes>> getUploadTaskList() {
+    public List<UploadTask> getUploadTaskList() {
         return uploadTaskList;
     }
 
-    public void addTask(UploadTask<FileUploadTask.FileUploadRes> task) {
-//        if (this.uploadTaskList == null) {
-//            this.uploadTaskList = new ArrayList<>();
-//        }
-//        this.uploadTaskList.add(task);
+    public void addTask(UploadTask task) {
+        if (this.uploadTaskList == null) {
+            this.uploadTaskList = new ArrayList<>();
+        }
+        this.uploadTaskList.add(task);
+        notifyItemInserted(uploadTaskList.indexOf(task));
     }
 
 
@@ -73,9 +72,9 @@ public class UploadTaskAdapter extends RecyclerView.Adapter<UploadTaskAdapter.Ho
         }
 
         void fill(UploadTask<FileUploadTask.FileUploadRes> task) {
-            path.setText(task.getRes().getFile().getName());
+            path.setText(task.getRes().getFile().getName().substring(13));
             path.append("\n" + getStatusString(task.getStatus()));
-            Glide.with(activity)
+            Glide.with(itemView.getContext())
                     .load(task.getRes().getFile())
                     .into(pic);
         }

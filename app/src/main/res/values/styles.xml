@@ -8,4 +8,58 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="DriveLensItem">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:padding">15dp</item>
+    </style>
+
+    <style name="RoProperty">
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+    </style>
+
+    <style name="PropertyListTitle">
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+    </style>
+
+    <style name="PropertyListItem">
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+        <item name="android:minHeight">32dp</item>
+    </style>
+
+    <style name="GridPropertyToggle" parent="@style/PropertyToggle.Medium"/>
+
+    <style name="PropertyToggle.Large">
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+    </style>
+
+    <style name="PropertyToggle.Medium">
+        <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
+    </style>
+
+    <style name="LiveViewContinueButton">
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+    </style>
+
+    <style name="PropertyToggle">
+        <item name="android:textOn"></item>
+        <item name="android:textOff"></item>
+        <item name="android:layout_width">@dimen/gridPropertyWidth</item>
+        <item name="android:layout_height">@dimen/gridPropertyHeight</item>
+        <item name="android:gravity">center</item>
+        <item name="android:text">" "</item>
+    </style>
+
+    <style name="StreamItemLabel">
+        <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
+    </style>
+
+    <style name="Theme.RYC" parent="android:Theme.Holo.Light">
+        <item name="android:actionBarStyle">@style/Theme.ActionBar.RYC</item>
+    </style>
+
+    <style name="Theme.ActionBar.RYC" parent="android:style/Widget.Holo.Light.ActionBar">
+        <item name="android:background">@color/actionBarBackground</item>
+    </style>
+
 </resources>

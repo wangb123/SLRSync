@@ -3,6 +3,8 @@ package org.wbing.oss;
 
 import org.wbing.oss.impl.UploaderImpl;
 
+import java.util.List;
+
 /**
  * 上传引擎
  *
@@ -62,6 +64,11 @@ public class UploaderEngine implements Uploader {
     @Override
     public UploadTask pullTaskById(String taskId) {
         return uploader.pullTaskById(taskId);
+    }
+
+    @Override
+    public List<UploadTask> pullAllTask() {
+        return uploader.pullAllTask();
     }
 
     @Override

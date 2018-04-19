@@ -3,4 +3,9 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+
+    <color name="windowBackground">#ffdddddd</color>
+    <color name="propertyListBackground">#aadddddd</color>
+    <color name="actionBarBackground">#ffbbbbbb</color>
+    <color name="selectedValueBackground">#ffffffff</color>
 </resources>

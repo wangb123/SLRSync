@@ -14,8 +14,6 @@ import android.widget.CompoundButton;
 import com.tumao.sync.R;
 import com.tumao.sync.SLRService;
 
-import org.wbing.oss.UploadTask;
-import org.wbing.oss.UploadTaskListener;
 import org.wbing.oss.UploaderEngine;
 import org.wbing.oss.UploaderService;
 
@@ -30,48 +28,10 @@ import org.wbing.oss.UploaderService;
  */
 public class MainActivity extends AppCompatActivity {
 
-    SLRService slrService;
+    private SLRService slrService;
 
     private CheckBox checkBox;
     private RecyclerView recyclerView;
-    private UploadTaskAdapter uploadTaskAdapter;
-
-
-    private UploadTaskListener taskListener = new UploadTaskListener() {
-        @Override
-        public void onCreate(UploadTask task) {
-            if (uploadTaskAdapter.getItemCount() <= 1) {
-                uploadTaskAdapter.notifyDataSetChanged();
-            } else {
-                uploadTaskAdapter.notifyItemInserted(uploadTaskAdapter.getUploadTaskList().indexOf(task));
-            }
-        }
-
-        @Override
-        public void onStart(UploadTask task) {
-            uploadTaskAdapter.notifyItemChanged(uploadTaskAdapter.getUploadTaskList().indexOf(task));
-        }
-
-        @Override
-        public void onProgress(UploadTask task, int length, int total) {
-
-        }
-
-        @Override
-        public boolean onError(UploadTask task, Throwable throwable) {
-            return false;
-        }
-
-        @Override
-        public void onPause(UploadTask task) {
-
-        }
-
-        @Override
-        public void onCancle(UploadTask task) {
-
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,10 +56,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        uploadTaskAdapter = new UploadTaskAdapter(this);
         recyclerView = findViewById(R.id.task);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(uploadTaskAdapter);
 
     }
 
@@ -115,21 +73,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         SLRService.bind(this, serviceConnection);
-        UploaderEngine.instance().addUploadTaskListener(taskListener);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         unbindService(serviceConnection);
-        UploaderEngine.instance().removeUploadTaskListener(taskListener);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
     }
-
 
     /**
      *
@@ -139,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName name, IBinder service) {
             SLRService.ServiceBinder binder = (SLRService.ServiceBinder) service;
             slrService = binder.getService();
-            uploadTaskAdapter.setUploadTaskList(slrService.getTaskList());
+            recyclerView.setAdapter(binder.getUploadTaskAdapter());
         }
 
         @Override

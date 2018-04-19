@@ -1,9 +1,9 @@
 package com.tumao.sync;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
@@ -14,8 +14,15 @@ import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.tumao.sync.ptp.Camera;
+import com.tumao.sync.ptp.EosCamera;
+import com.tumao.sync.ptp.NikonCamera;
+import com.tumao.sync.ptp.PtpCamera;
 import com.tumao.sync.ptp.PtpConstants;
 import com.tumao.sync.ptp.PtpUsbConnection;
+import com.tumao.sync.ptp.WorkerNotifier;
+import com.tumao.sync.ptp.model.LiveViewData;
+import com.tumao.sync.ptp.model.ObjectInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,11 +39,131 @@ public class SLRDevice {
 
     private static final String TAG = SLRDevice.class.getSimpleName();
 
+    private final OnSLRDeviceFileScanListener slrDeviceFileScanListener = new OnSLRDeviceFileScanListener() {
+        @Override
+        public void onScanStart() {
+            if (deviceFileScanListener != null) {
+                deviceFileScanListener.onScanStart();
+            }
+        }
+
+        @Override
+        public void onFileAdd(File file) {
+            if (deviceFileScanListener != null) {
+                deviceFileScanListener.onFileAdd(file);
+            }
+        }
+
+        @Override
+        public void onScanEnd(List<File> files) {
+            if (deviceFileScanListener != null) {
+                deviceFileScanListener.onScanEnd(files);
+            }
+        }
+    };
+    private OnSLRDeviceFileScanListener deviceFileScanListener;
 
     private File root;
     private List<File> files;
+    private PtpCamera camera;
+    private Camera.CameraListener listener = new Camera.CameraListener() {
+        @Override
+        public void onCameraStarted(Camera camera) {
+            Log.i(TAG, "onCameraStarted");
+        }
 
-    private UsbDeviceConnection deviceConnection;
+        @Override
+        public void onCameraStopped(Camera camera) {
+            Log.i(TAG, "onCameraStopped");
+        }
+
+        @Override
+        public void onNoCameraFound() {
+            Log.i(TAG, "onNoCameraFound");
+        }
+
+        @Override
+        public void onError(String message) {
+            Log.i(TAG, "onError");
+        }
+
+        @Override
+        public void onPropertyChanged(int property, int value) {
+            Log.i(TAG, "onPropertyChanged");
+        }
+
+        @Override
+        public void onPropertyStateChanged(int property, boolean enabled) {
+            Log.i(TAG, "onPropertyStateChanged");
+        }
+
+        @Override
+        public void onPropertyDescChanged(int property, int[] values) {
+            Log.i(TAG, "onPropertyDescChanged");
+        }
+
+        @Override
+        public void onLiveViewStarted() {
+            Log.i(TAG, "onLiveViewStarted");
+        }
+
+        @Override
+        public void onLiveViewData(LiveViewData data) {
+            Log.i(TAG, "onLiveViewData");
+        }
+
+        @Override
+        public void onLiveViewStopped() {
+            Log.i(TAG, "onLiveViewStopped");
+        }
+
+        @Override
+        public void onCapturedPictureReceived(int objectHandle, String filename, Bitmap thumbnail, Bitmap bitmap) {
+            Log.i(TAG, "onCapturedPictureReceived");
+        }
+
+        @Override
+        public void onBulbStarted() {
+            Log.i(TAG, "onBulbStarted");
+        }
+
+        @Override
+        public void onBulbExposureTime(int seconds) {
+            Log.i(TAG, "onBulbExposureTime");
+        }
+
+        @Override
+        public void onBulbStopped() {
+            Log.i(TAG, "onCameraStarted");
+        }
+
+        @Override
+        public void onFocusStarted() {
+            Log.i(TAG, "onFocusStarted");
+        }
+
+        @Override
+        public void onFocusEnded(boolean hasFocused) {
+            Log.i(TAG, "onFocusEnded");
+        }
+
+        @Override
+        public void onFocusPointsChanged() {
+            Log.i(TAG, "onFocusPointsChanged");
+        }
+
+        @Override
+        public void onObjectAdded(int handle, int format) {
+            Log.i(TAG, "onObjectAdded");
+            if (camera == null) {
+                return;
+            }
+            if (format != PtpConstants.ObjectFormat.EXIF_JPEG) {
+                return;
+            }
+            importImageToFile(handle);
+        }
+    };
 
     private final UsbManager usbManager;
     public final UsbDevice usbDevice;
@@ -44,6 +171,7 @@ public class SLRDevice {
     private UsbEndpoint outEndpoint = null;
     private UsbEndpoint inEndpoint = null;
 
+    private PtpUsbConnection connection;
     private boolean inited = false;
 
     private SLRDevice(UsbManager usbManager, UsbDevice usbDevice,
@@ -69,14 +197,6 @@ public class SLRDevice {
         if (!root.exists()) {
             root.mkdirs();
         }
-    }
-
-    public File getRoot() {
-        return root;
-    }
-
-    public List<File> getFiles() {
-        return files;
     }
 
     public static SLRDevice[] getSLRDevices(Context context) {
@@ -126,8 +246,14 @@ public class SLRDevice {
         return usbDevices.toArray(new SLRDevice[0]);
     }
 
-    public void init() throws IOException {
+
+    public void setDeviceFileScanListener(OnSLRDeviceFileScanListener deviceFileScanListener) {
+        this.deviceFileScanListener = deviceFileScanListener;
+    }
+
+    public void init(OnSLRDeviceFileScanListener deviceFileScanListener) throws IOException {
         files.clear();
+        this.deviceFileScanListener = deviceFileScanListener;
         if (usbManager.hasPermission(usbDevice))
             setupDevice();
         else
@@ -138,14 +264,63 @@ public class SLRDevice {
 
     private void setupDevice() throws IOException {
         Log.d(TAG, "setup device");
-
-        PtpUsbConnection connection = new PtpUsbConnection(usbManager.openDevice(usbDevice), inEndpoint, outEndpoint,
+        if (camera != null) {
+            camera.shutdown();
+            camera = null;
+        }
+        connection = new PtpUsbConnection(usbManager.openDevice(usbDevice), inEndpoint, outEndpoint,
                 usbDevice.getVendorId(), usbDevice.getProductId());
         if (usbDevice.getVendorId() == PtpConstants.CanonVendorId) {
-
+            camera = new EosCamera(connection, listener, new WorkerNotifier(App.getApp()));
         } else if (usbDevice.getVendorId() == PtpConstants.NikonVendorId) {
-
+            camera = new NikonCamera(connection, listener, new WorkerNotifier(App.getApp()));
         }
+        if (camera != null) {
+            camera.retrieveStorages(new Camera.StorageInfoListener() {
+                List<Integer> handleList = new ArrayList<>();
+
+                @Override
+                public void onStorageFound(int handle, String label) {
+                    handleList.add(handle);
+                }
+
+                @Override
+                public void onAllStoragesFound() {
+                    files.clear();
+                    slrDeviceFileScanListener.onScanStart();
+                    for (Integer handle : handleList) {
+                        if (camera == null) {
+                            return;
+                        }
+                        camera.retrieveImageHandles(this,
+                                handle,
+                                PtpConstants.ObjectFormat.EXIF_JPEG);
+                    }
+                }
+
+                @Override
+                public void onImageHandlesRetrieved(int[] handles) {
+                    if (handles == null || handles.length == 0) {
+                        return;
+                    }
+                    if (camera == null) {
+                        return;
+                    }
+                    for (int handle : handles) {
+                        importImageToFile(handle);
+                    }
+                    slrDeviceFileScanListener.onScanEnd(files);
+                }
+            });
+        }
+//        int[] storageIds = usbDevice.getStorageIds();
+//        if (storageIds == null) {
+//            return;
+//        }
+//        for (int storageId : storageIds) {
+//            scanObjectsInStorage(mtpDevice, storageId, 0, 0);
+//        }
+//        camera.retrieveImageHandles();
 
 //        deviceConnection = usbManager.openDevice(usbDevice);
 //        if (deviceConnection == null) {
@@ -173,13 +348,19 @@ public class SLRDevice {
 
     public void close() {
         Log.d(TAG, "close device");
-        if (deviceConnection == null) return;
-        deviceConnection.close();
-        boolean release = deviceConnection.releaseInterface(usbInterface);
-        if (!release) {
-            Log.e(TAG, "could not release interface!");
-        }
+        if (connection == null) return;
+        connection.close();
         inited = false;
+    }
+
+    private void importImageToFile(int handle) {
+        camera.importImageToFile(handle, new Camera.ImportToFileListener() {
+            @Override
+            public void onImportToFile(int objectHandle, ObjectInfo objectInfo, File file) {
+                files.add(file);
+                slrDeviceFileScanListener.onFileAdd(file);
+            }
+        }, root.getAbsolutePath());
     }
 
 
@@ -214,5 +395,16 @@ public class SLRDevice {
             }
         }
     }
+
+
+    public interface OnSLRDeviceFileScanListener {
+
+        void onScanStart();
+
+        void onFileAdd(File file);
+
+        void onScanEnd(List<File> files);
+    }
+
 }
 

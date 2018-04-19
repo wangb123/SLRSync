@@ -103,6 +103,11 @@ public class UploaderImpl implements Uploader {
     }
 
     @Override
+    public List<UploadTask> pullAllTask() {
+        return null;
+    }
+
+    @Override
     public void addUploadTaskListener(UploadTaskListener taskListener) {
         if (!taskListenerList.contains(taskListener)) {
             taskListenerList.add(taskListener);

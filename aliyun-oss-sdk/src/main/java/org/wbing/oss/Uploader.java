@@ -1,5 +1,7 @@
 package org.wbing.oss;
 
+import java.util.List;
+
 /**
  * 接口：上传功能抽象
  *
@@ -37,9 +39,14 @@ public interface Uploader {
     UploadTask pullWaitingTask();
 
     /**
-     * 获取第一个正在等待的任务
+     * 通过Id获取一个任务
      */
     UploadTask pullTaskById(String taskId);
+
+    /**
+     * 通过Id获取一个任务
+     */
+    List<UploadTask> pullAllTask();
 
     /**
      * 添加上传监听
