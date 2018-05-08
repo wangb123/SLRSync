@@ -28,6 +28,7 @@ public class Luban implements Handler.Callback {
 
     private int width;
     private int height;
+    private String name;
     private String mTargetDir;
     private List<String> mPaths;
     private int mLeastCompressSize;
@@ -40,6 +41,7 @@ public class Luban implements Handler.Callback {
         this.height = builder.height;
         this.mPaths = builder.mPaths;
         this.mTargetDir = builder.mTargetDir;
+        this.name = builder.name;
         this.mCompressListener = builder.mCompressListener;
         this.mLeastCompressSize = builder.mLeastCompressSize;
         mHandler = new Handler(Looper.getMainLooper(), this);
@@ -64,8 +66,8 @@ public class Luban implements Handler.Callback {
         }
 
         String cacheBuilder = mTargetDir + "/" +
-                System.currentTimeMillis() +
-                (int) (Math.random() * 1000) +
+                (TextUtils.isEmpty(name) ? (System.currentTimeMillis() +
+                        (int) (Math.random() * 1000)) : name) +
                 (TextUtils.isEmpty(suffix) ? ".jpg" : suffix);
 
         return new File(cacheBuilder);
@@ -191,6 +193,7 @@ public class Luban implements Handler.Callback {
         private String mTargetDir;
         private int width;
         private int height;
+        private String name;
         private List<String> mPaths;
         private int mLeastCompressSize = 100;
         private OnCompressListener mCompressListener;
@@ -230,6 +233,11 @@ public class Luban implements Handler.Callback {
 
         public Builder height(int height) {
             this.height = height;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
             return this;
         }
 

@@ -4,18 +4,20 @@ package org.wbing.oss;
  * @author 王冰
  * @date 2018/4/17
  */
-public interface UploadTaskListener<Res extends UploadRes> {
+public interface UploadTaskListener {
 
 
-    void onCreate(UploadTask<Res> task);
+    void onCreate(UploadTask task);
 
-    void onStart(UploadTask<Res> task);
+    void onStart(UploadTask task);
 
-    void onProgress(UploadTask<Res> task, int length, int total);
+    void onProgress(UploadTask task, long length, long total);
 
-    boolean onError(UploadTask<Res> task, Throwable throwable);
+    void onComplete(UploadTask task);
 
-    void onPause(UploadTask<Res> task);
+    boolean onError(UploadTask task, Throwable throwable);
 
-    void onCancle(UploadTask<Res> task);
+    void onPause(UploadTask task);
+
+    void onCancel(UploadTask task);
 }

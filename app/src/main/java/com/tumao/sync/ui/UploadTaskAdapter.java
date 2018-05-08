@@ -1,5 +1,6 @@
 package com.tumao.sync.ui;
 
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,7 +12,7 @@ import com.bumptech.glide.Glide;
 import com.tumao.sync.R;
 
 import org.wbing.oss.UploadTask;
-import org.wbing.oss.impl.FileUploadTask;
+import org.wbing.oss.UploaderEngine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,43 +22,61 @@ import java.util.List;
  * @date 2018/4/17
  */
 public class UploadTaskAdapter extends RecyclerView.Adapter<UploadTaskAdapter.Holder> {
-    List<UploadTask> uploadTaskList;
 
-    public UploadTaskAdapter() {
-    }
+    public static final String PAYLOAD_STATUS = "status";
+    public static final String PAYLOAD_PROGRESS = "progress";
 
-    public void setUploadTaskList(List<UploadTask> uploadTaskList) {
-        this.uploadTaskList = uploadTaskList;
+    private List<String> taskIdList = new ArrayList<>();
+
+    public void clear() {
+        this.taskIdList.clear();
         notifyDataSetChanged();
     }
 
-    public List<UploadTask> getUploadTaskList() {
-        return uploadTaskList;
+    public int indexOf(String taskId) {
+        return taskIdList.indexOf(taskId);
     }
 
-    public void addTask(UploadTask task) {
-        if (this.uploadTaskList == null) {
-            this.uploadTaskList = new ArrayList<>();
+    public void add(String taskId) {
+        if (taskIdList.contains(taskId)) {
+            return;
         }
-        this.uploadTaskList.add(task);
-        notifyItemInserted(uploadTaskList.indexOf(task));
-    }
-
-
-    @Override
-    public Holder onCreateViewHolder(ViewGroup parent, int viewType) {
-        Holder holder = new Holder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_file_task, parent, false));
-        return holder;
+        taskIdList.add(taskId);
+        notifyItemInserted(taskIdList.indexOf(taskId));
     }
 
     @Override
-    public void onBindViewHolder(Holder holder, int position) {
-        holder.fill(uploadTaskList.get(position));
+    public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        return new Holder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_file_task, parent, false));
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull Holder holder, int position) {
+        holder.fill(UploaderEngine.instance().pullTaskById(taskIdList.get(position)));
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull Holder holder, int position, @NonNull List<Object> payloads) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position);
+        } else {
+            for (Object obj : payloads) {
+                switch (obj.toString()) {
+                    case PAYLOAD_STATUS:
+                        holder.fill(UploaderEngine.instance().pullTaskById(taskIdList.get(position)));
+                        break;
+                    case PAYLOAD_PROGRESS:
+                        holder.fill(UploaderEngine.instance().pullTaskById(taskIdList.get(position)));
+                        break;
+                }
+            }
+        }
+        super.onBindViewHolder(holder, position, payloads);
     }
 
     @Override
     public int getItemCount() {
-        return uploadTaskList == null ? 0 : uploadTaskList.size();
+        return taskIdList == null ? 0 : taskIdList.size();
     }
 
     class Holder extends RecyclerView.ViewHolder {
@@ -71,7 +90,7 @@ public class UploadTaskAdapter extends RecyclerView.Adapter<UploadTaskAdapter.Ho
             path = itemView.findViewById(R.id.path);
         }
 
-        void fill(UploadTask<FileUploadTask.FileUploadRes> task) {
+        void fill(UploadTask task) {
             path.setText(task.getRes().getFile().getName().substring(13));
             path.append("\n" + getStatusString(task.getStatus()));
             Glide.with(itemView.getContext())

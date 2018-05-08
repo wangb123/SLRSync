@@ -92,6 +92,9 @@ class Engine {
     }
 
     File compress() throws IOException {
+        if (tagImg != null && tagImg.exists()) {
+            return tagImg;
+        }
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inSampleSize = computeSize();
 
@@ -115,7 +118,7 @@ class Engine {
         Rect rect = new Rect(0, 0, width, height);
         canvas.drawBitmap(tagBitmap, null, rect, null);
 
-        result.compress(Bitmap.CompressFormat.JPEG, 85, stream);
+        result.compress(Bitmap.CompressFormat.JPEG, 90, stream);
         result.recycle();
         tagBitmap.recycle();
 

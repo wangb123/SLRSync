@@ -18,6 +18,7 @@ package com.tumao.sync.ptp;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.util.Log;
 
 import com.tumao.sync.R;
 import com.tumao.sync.util.NotificationIds;
@@ -51,12 +52,14 @@ public class WorkerNotifier implements Camera.WorkerListener {
 
     @Override
     public void onWorkerStarted() {
+        Log.e("WorkerNotifier","onWorkerStarted");
         notification.flags |= Notification.FLAG_NO_CLEAR;
         notificationManager.notify(uniqueId, notification);
     }
 
     @Override
     public void onWorkerEnded() {
+        Log.e("WorkerNotifier","onWorkerEnded");
         notificationManager.cancel(uniqueId);
     }
 

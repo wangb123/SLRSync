@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.tumao.sync.bean.SLRExifInfo;
 import com.tumao.sync.ui.UploadTaskAdapter;
+import com.tumao.sync.util.HttpConnectionUtil;
 
 import org.wbing.oss.UploadTask;
 import org.wbing.oss.UploadTaskListener;
@@ -27,7 +28,9 @@ import org.wbing.oss.impl.FileUploadTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -58,9 +61,9 @@ public class SLRService extends Service {
 
     private UploadTaskAdapter uploadTaskAdapter = new UploadTaskAdapter();
 
-    private UploadTaskListener<FileUploadTask.FileUploadRes> taskListener = new UploadTaskListener<FileUploadTask.FileUploadRes>() {
+    private UploadTaskListener taskListener = new UploadTaskListener() {
         @Override
-        public void onCreate(UploadTask<FileUploadTask.FileUploadRes> task) {
+        public void onCreate(UploadTask task) {
             File file = task.getRes().getFile();
             try {
                 SLRExifInfo info = SLRExifInfo.createByExif(new ExifInterface(file.getAbsolutePath()));
@@ -71,48 +74,48 @@ public class SLRService extends Service {
         }
 
         @Override
-        public void onStart(UploadTask<FileUploadTask.FileUploadRes> task) {
+        public void onStart(UploadTask task) {
             if (uploadTaskAdapter.getItemCount() == 0) {
                 return;
             }
-            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            final int index = uploadTaskAdapter.indexOf(task.getId());
             if (index >= 0) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        uploadTaskAdapter.notifyItemChanged(index, "status");
+                        uploadTaskAdapter.notifyItemChanged(index, UploadTaskAdapter.PAYLOAD_STATUS);
                     }
                 });
             }
         }
 
         @Override
-        public void onProgress(UploadTask<FileUploadTask.FileUploadRes> task, int length, int total) {
+        public void onProgress(UploadTask task, long length, long total) {
             if (uploadTaskAdapter.getItemCount() == 0) {
                 return;
             }
-            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            final int index = uploadTaskAdapter.indexOf(task.getId());
             if (index >= 0) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        uploadTaskAdapter.notifyItemChanged(index, "progress");
+                        uploadTaskAdapter.notifyItemChanged(index, UploadTaskAdapter.PAYLOAD_PROGRESS);
                     }
                 });
             }
         }
 
         @Override
-        public boolean onError(UploadTask<FileUploadTask.FileUploadRes> task, Throwable throwable) {
+        public boolean onError(UploadTask task, Throwable throwable) {
             if (uploadTaskAdapter.getItemCount() == 0) {
                 return false;
             }
-            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            final int index = uploadTaskAdapter.indexOf(task.getId());
             if (index >= 0) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        uploadTaskAdapter.notifyItemChanged(index, "status");
+                        uploadTaskAdapter.notifyItemChanged(index, UploadTaskAdapter.PAYLOAD_STATUS);
                     }
                 });
             }
@@ -120,32 +123,49 @@ public class SLRService extends Service {
         }
 
         @Override
-        public void onPause(UploadTask<FileUploadTask.FileUploadRes> task) {
+        public void onComplete(UploadTask task) {
             if (uploadTaskAdapter.getItemCount() == 0) {
                 return;
             }
-            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            final int index = uploadTaskAdapter.indexOf(task.getId());
             if (index >= 0) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        uploadTaskAdapter.notifyItemChanged(index, "status");
+                        uploadTaskAdapter.notifyItemChanged(index, UploadTaskAdapter.PAYLOAD_STATUS);
+                    }
+                });
+            }
+            associatedAtlas(task);
+        }
+
+        @Override
+        public void onPause(UploadTask task) {
+            if (uploadTaskAdapter.getItemCount() == 0) {
+                return;
+            }
+            final int index = uploadTaskAdapter.indexOf(task.getId());
+            if (index >= 0) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        uploadTaskAdapter.notifyItemChanged(index, UploadTaskAdapter.PAYLOAD_STATUS);
                     }
                 });
             }
         }
 
         @Override
-        public void onCancle(UploadTask<FileUploadTask.FileUploadRes> task) {
+        public void onCancel(UploadTask task) {
             if (uploadTaskAdapter.getItemCount() == 0) {
                 return;
             }
-            final int index = uploadTaskAdapter.getUploadTaskList().indexOf(task);
+            final int index = uploadTaskAdapter.indexOf(task.getId());
             if (index >= 0) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        uploadTaskAdapter.notifyItemChanged(index, "status");
+                        uploadTaskAdapter.notifyItemChanged(index, UploadTaskAdapter.PAYLOAD_STATUS);
                     }
                 });
             }
@@ -207,10 +227,11 @@ public class SLRService extends Service {
                 slrDevice.init(new SLRDevice.OnSLRDeviceFileScanListener() {
                     @Override
                     public void onScanStart() {
+                        UploaderEngine.instance().reset();
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                uploadTaskAdapter.setUploadTaskList(null);
+                                uploadTaskAdapter.clear();
                             }
                         });
                     }
@@ -218,13 +239,13 @@ public class SLRService extends Service {
                     @Override
                     public void onFileAdd(File file) {
                         Log.e(TAG, String.format("path:%s\nlen:%s", file.getAbsolutePath(), file.length()));
-                        final FileUploadTask uploadTask = new FileUploadTask(file);
+                        FileUploadTask uploadTask = new FileUploadTask(file);
                         uploadTask.setTaskListener(taskListener);
-                        UploaderEngine.instance().addTask(uploadTask);
+                        final String taskId = UploaderEngine.instance().addTask(uploadTask);
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                uploadTaskAdapter.addTask(uploadTask);
+                                uploadTaskAdapter.add(taskId);
                             }
                         });
                     }
@@ -294,6 +315,25 @@ public class SLRService extends Service {
             }
         }
     };
+
+
+    private void associatedAtlas(final UploadTask task) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Map<String, String> params = new HashMap<>();
+                params.put("oss_pic_path", task.getUrl());
+                params.put("exif", task.getExtra());
+                params.put("file_size", String.valueOf(task.getTotal()));
+                Log.e("params", params.toString());
+                String param = App.getApp().getGson().toJson(params);
+                params.clear();
+                params.put("data", param);
+                String response = HttpConnectionUtil.getHttp().postRequset("http://yst.tomomall.com/app/api.php", params);
+                Log.e("associatedAtlas:", "resp:" + response);
+            }
+        }).start();
+    }
 
     public static class ServiceBinder extends Binder {
         private SLRService service;

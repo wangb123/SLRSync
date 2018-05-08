@@ -51,9 +51,9 @@ public class SLRExifInfo {
 
 
     private String resultJson;
-    private String orientation;
-    private String dateTime;
-    private String make;
+    private String orientation;//角度中心
+    private String dateTime;//时间
+    private String make;//
     private String model;
     private String flash;
     private String imageLength;

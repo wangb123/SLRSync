@@ -1,6 +1,8 @@
 package org.wbing.oss;
 
 
+import android.app.Application;
+
 import org.wbing.oss.impl.UploaderImpl;
 
 import java.util.List;
@@ -24,6 +26,7 @@ public class UploaderEngine implements Uploader {
 
     private boolean atOnceUpload = false;
     private Uploader uploader;
+    private Application app;
 
     private UploaderEngine() {
         uploader = new UploaderImpl();
@@ -86,4 +89,16 @@ public class UploaderEngine implements Uploader {
         return uploader.getUploadTaskListener();
     }
 
+    @Override
+    public void reset() {
+        uploader.reset();
+    }
+
+    public void setApp(Application app) {
+        this.app = app;
+    }
+
+    public Application getApp() {
+        return app;
+    }
 }

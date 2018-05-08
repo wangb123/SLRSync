@@ -66,4 +66,9 @@ public interface Uploader {
      * 获取上传任务的总监听
      */
     UploadTaskListener getUploadTaskListener();
+
+    /**
+     * 重置
+     */
+    void reset();
 }

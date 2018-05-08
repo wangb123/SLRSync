@@ -70,7 +70,7 @@ public class UploadTask<Res extends UploadRes> {
      */
     private String extra;
 
-    private UploadTaskListener<Res> taskListener;
+    private UploadTaskListener taskListener;
 
     public void setId(String id) {
         this.id = id;
@@ -96,6 +96,30 @@ public class UploadTask<Res extends UploadRes> {
         return length;
     }
 
+    public long getTotal() {
+        return total;
+    }
+
+    public void setRes(Res res) {
+        this.res = res;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setLength(long length) {
+        this.length = length;
+    }
+
+    public void setTotal(long total) {
+        this.total = total;
+    }
+
     public String getUrl() {
         return url;
     }
@@ -108,11 +132,11 @@ public class UploadTask<Res extends UploadRes> {
         this.extra = extra;
     }
 
-    public UploadTaskListener<Res> getTaskListener() {
+    public UploadTaskListener getTaskListener() {
         return taskListener;
     }
 
-    public void setTaskListener(UploadTaskListener<Res> taskListener) {
+    public void setTaskListener(UploadTaskListener taskListener) {
         this.taskListener = taskListener;
     }
 
@@ -130,12 +154,20 @@ public class UploadTask<Res extends UploadRes> {
         }
     }
 
-    public void onProgress(int length, int total) {
+    public void onProgress(long length, long total) {
         this.length = length;
         this.total = total;
-        this.status = length == total ? STATUS_GOING : STATUS_COMPLETE;
+        this.status = STATUS_GOING;
         if (this.taskListener != null) {
             taskListener.onProgress(this, length, total);
+        }
+    }
+
+
+    public void onComplete() {
+        this.status = STATUS_COMPLETE;
+        if (this.taskListener != null) {
+            taskListener.onComplete(this);
         }
     }
 
@@ -156,7 +188,7 @@ public class UploadTask<Res extends UploadRes> {
     public void onCancle() {
         this.status = STATUS_CANCLE;
         if (this.taskListener != null) {
-            taskListener.onCancle(this);
+            taskListener.onCancel(this);
         }
     }
 
@@ -165,11 +197,13 @@ public class UploadTask<Res extends UploadRes> {
     public String toString() {
         return "UploadTask{" +
                 "id='" + id + '\'' +
-                ", res=" + res.toString() +
+                ", res=" + res +
                 ", status=" + status +
                 ", url='" + url + '\'' +
                 ", length=" + length +
+                ", total=" + total +
                 ", extra='" + extra + '\'' +
                 '}';
     }
+
 }

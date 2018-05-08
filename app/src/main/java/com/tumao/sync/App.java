@@ -5,6 +5,8 @@ import android.app.Application;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import org.wbing.oss.UploaderEngine;
+
 import java.io.File;
 
 /**
@@ -24,6 +26,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         app = this;
+        UploaderEngine.instance().setApp(this);
     }
 
     public File getExternalSLRThumbDir() {
