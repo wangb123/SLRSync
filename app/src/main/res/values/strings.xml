@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Sync</string>
+    <string name="app_name">人在旅途</string>
 
     <string name="launcher_label">RYC USB</string>
     <string name="ok">Ok</string>
@@ -71,4 +71,11 @@
     <string name="crash_dialog_text">An unexpected error occurred forcing the application to stop. Please help us fix this by sending us error data, all you have to do is click \'OK\'.</string>
     <string name="crash_dialog_comment_prompt">You might add your comments about the problem below or add your email address so we can contact:</string>
     <string name="crash_dialog_ok_toast">Thank you!</string>
+
+
+    <string name="hint_splash">与全球50W+影响青年\n一起将梦想照进现实&#8230;</string>
+    <string name="register">注册</string>
+    <string name="login">登录</string>
+    <string name="login_wx">微信授权登录</string>
+    <string name="hint_unknown">抱歉，建设中</string>
 </resources>

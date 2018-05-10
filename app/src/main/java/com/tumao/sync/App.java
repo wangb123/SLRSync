@@ -4,6 +4,8 @@ import android.app.Application;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.tumao.sync.bean.UserInfo;
+import com.tumao.sync.util.SpHelper;
 
 import org.wbing.oss.UploaderEngine;
 
@@ -21,6 +23,28 @@ public class App extends Application {
     }
 
     private Gson gson;
+    private UserInfo userInfo;
+
+    public UserInfo getUserInfo() {
+        if (userInfo == null) {
+            synchronized (UserInfo.class) {
+                if (userInfo == null) {
+                    if (SpHelper.getBoolean(UserInfo.class, "login")) {
+                        String info = SpHelper.getString(UserInfo.class, "info");
+                        UserInfo.Response response = App.getApp().getGson().fromJson(info, UserInfo.Response.class);
+                        if (response != null && response.isSuccess()) {
+                            userInfo = response.info;
+                        }
+                    }
+                }
+            }
+        }
+        return userInfo;
+    }
+
+    public void setUserInfo(UserInfo userInfo) {
+        this.userInfo = userInfo;
+    }
 
     @Override
     public void onCreate() {

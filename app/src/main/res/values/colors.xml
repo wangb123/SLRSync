@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorPrimary">#fad008</color>
+    <color name="colorPrimaryDark">#fad008</color>
+    <color name="colorAccent">#fad008</color>
 
-    <color name="windowBackground">#ffdddddd</color>
+    <color name="windowBackground">#f8f8f8</color>
     <color name="propertyListBackground">#aadddddd</color>
     <color name="actionBarBackground">#ffbbbbbb</color>
     <color name="selectedValueBackground">#ffffffff</color>
+
+    <color name="colorAccentDark">#a0acc0</color>
+
 </resources>

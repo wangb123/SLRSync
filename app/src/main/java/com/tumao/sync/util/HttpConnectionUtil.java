@@ -128,4 +128,67 @@ public class HttpConnectionUtil {
         }
         return s;
     }
+
+    public static class Response<Data> {
+        public int _status;
+        public String tip;
+        public Data info;
+        public Page page;
+
+
+        public boolean isSuccess() {
+            return _status == 1;
+        }
+
+        public static class Page {
+
+            /**
+             * total_page : 1
+             * prev_page : 1
+             * next_page : 1
+             * cur_page : 1
+             */
+
+            private int total_page;
+            private int prev_page;
+            private int next_page;
+            private int cur_page;
+
+            public boolean hasMore() {
+                return total_page != cur_page;
+            }
+
+            public int getTotal_page() {
+                return total_page;
+            }
+
+            public void setTotal_page(int total_page) {
+                this.total_page = total_page;
+            }
+
+            public int getPrev_page() {
+                return prev_page;
+            }
+
+            public void setPrev_page(int prev_page) {
+                this.prev_page = prev_page;
+            }
+
+            public int getNext_page() {
+                return next_page;
+            }
+
+            public void setNext_page(int next_page) {
+                this.next_page = next_page;
+            }
+
+            public int getCur_page() {
+                return cur_page;
+            }
+
+            public void setCur_page(int cur_page) {
+                this.cur_page = cur_page;
+            }
+        }
+    }
 }

@@ -1,29 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="com.tumao.sync.ui.MainActivity">
+    android:orientation="vertical">
 
-    <CheckBox
-        android:id="@+id/text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="是否实时上传"
-        android:visibility="visible" />
-
-    <Button
-        android:id="@+id/btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="拍完照就点一下"
-        android:visibility="gone" />
-
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/task"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="48dp"
+        android:background="@color/colorPrimary">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:paddingLeft="15dp"
+            android:textColor="@android:color/white"
+            android:textSize="16sp" />
+
+        <ImageButton
+            android:id="@+id/setting"
+            style="@style/BaseButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="right"
+            android:scaleType="centerInside"
+            android:src="@mipmap/ic_setting_white" />
+    </FrameLayout>
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:background="#d8d8d8" />
+
+
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.tumao.sync.view.QRadioButton
+            android:id="@+id/work"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:button="@null"
+            android:drawablePadding="4dp"
+            android:drawableTop="@drawable/selector_ic_tab_work"
+            android:gravity="center"
+            android:padding="6dp"
+            android:text="工作"
+            android:textColor="@drawable/selector_color_main_tab"
+            android:textSize="14sp" />
+
+        <com.tumao.sync.view.QRadioButton
+            android:id="@+id/school"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:button="@null"
+            android:drawablePadding="4dp"
+            android:drawableTop="@drawable/selector_ic_tab_school"
+            android:gravity="center"
+            android:padding="6dp"
+            android:text="学院"
+            android:textColor="@drawable/selector_color_main_tab"
+            android:textSize="14sp" />
+
+        <com.tumao.sync.view.QRadioButton
+            android:id="@+id/about"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:button="@null"
+            android:drawablePadding="4dp"
+            android:drawableTop="@drawable/selector_ic_tab_about"
+            android:gravity="center"
+            android:padding="6dp"
+            android:text="关于"
+            android:textColor="@drawable/selector_color_main_tab"
+            android:textSize="14sp" />
+
+        <com.tumao.sync.view.QRadioButton
+            android:id="@+id/self"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:button="@null"
+            android:drawablePadding="4dp"
+            android:drawableTop="@drawable/selector_ic_tab_self"
+            android:gravity="center"
+            android:padding="6dp"
+            android:text="我的"
+            android:textColor="@drawable/selector_color_main_tab"
+            android:textSize="14sp" />
+
+
+    </RadioGroup>
+
 </LinearLayout>
